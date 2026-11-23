@@ -14,3 +14,7 @@ Each step produces one commit.
 > I already added a folder with exported data for several videos exported from the tool.
 >
 > Please create the first commit including a readme file and another file that stores my user prompts.
+
+## Step 2: Add exported data
+
+> please commit the exports
