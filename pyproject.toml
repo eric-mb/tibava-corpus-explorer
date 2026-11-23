@@ -1,0 +1,13 @@
+[project]
+name = "tibava-corpus-explorer"
+version = "0.1.0"
+description = "Streamlit app for exploring a corpus of videos annotated with TIB AV-Analytics"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "altair>=5",
+    "numpy>=2",
+    "pandas>=2.2",
+    "pyyaml>=6",
+    "streamlit>=1.45",
+]

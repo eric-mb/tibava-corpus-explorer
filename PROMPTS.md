@@ -18,3 +18,16 @@ Each step produces one commit.
 ## Step 2: Add exported data
 
 > please commit the exports
+
+## Step 3: Pattern search and statistics app
+
+> Okay, now I want to create the app.
+>
+> It should have two views:
+>
+> View 1: A Pattern Search View where I can define a pattern like shot-reverse-shot as a python code block that can be executed to find the respective hits in a video. The results should be displayed on a timeline that shows the shot boundaries with a thumbnail of the shot above. Hits should be highlighted on the timeline with a color (different colors for A-B-A or C-B-C patterns) and when hovering over it one thumbnail per shot found in the sequence should be shown to investigate the pattern.
+>
+> View 2 should contain statistics for the camera sizes and the patterns defined in view 1 across the corpus.
+>
+> For now let's start with the first pattern which is shot-reverse-shot.
+> It is defined as a sequence of shots where two persons appear in alternating order like A-B-A-B-A. it has to be at least of length 3 (no max length)

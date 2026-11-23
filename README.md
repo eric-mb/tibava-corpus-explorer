@@ -22,6 +22,83 @@ The `exports/` folder holds one ZIP archive per video, exported from TIB-AV-A. E
 | `plugin_run_results.yml` | Results produced by those plugin runs                      |
 | `data/*.zip`             | Data files for the plugin results                          |
 
-## Status
+Persons come from the face clustering plugin: each face detection (sampled every 0.5 s) belongs
+to a cluster, and every cluster is treated as one person. `Good Bad Ugly` has no face clustering
+results, so person-based patterns can't find hits there.
 
-Work in progress. Setup and usage instructions will be added once the app exists.
+## Running the app
+
+Requires [uv](https://docs.astral.sh/uv/).
+
+```bash
+uv sync
+uv run streamlit run app.py
+```
+
+## Views
+
+### Pattern Search
+
+Pick a video and a pattern in the sidebar. The pattern is plain Python code, which you can edit
+and run in the browser. The results appear on an interactive shot timeline:
+
+- one thumbnail per shot, above the shot boundaries
+- shots coloured by camera size and labelled with the main person (`CU · A`)
+- hits shown as coloured bars below the shots, one colour per group (for example `A↔B` vs. `C↔B`)
+- hovering over a hit shows one thumbnail per shot of the sequence; clicking pins the preview
+- `−` / `Fit` / `+` to zoom
+
+**Save** writes the code to `patterns/<name>.py`. Saved patterns are also used by the
+statistics view.
+
+### Corpus Statistics
+
+- camera-size distribution per video and for the whole corpus (by shot count or by screen time)
+- for each saved pattern: hits per video, share of shots inside hits, hit length, and camera
+  sizes inside hits compared with all shots
+
+## Writing patterns
+
+A pattern defines `find(video)` and returns a list of `Hit` objects:
+
+```python
+NAME = "Shot-reverse-shot"
+
+def find(video):
+    hits = []
+    # video.shots[i].main_person, .persons, .scale, .start, .end ...
+    hits.append(Hit(shots=[3, 4, 5], persons=[a, b]))
+    return hits
+```
+
+| Attribute | Meaning |
+| --------- | ------- |
+| `video.shots` | list of `Shot` |
+| `shot.scale` | `Extreme Close-Up`, `Close-Up`, `Medium`, `Full`, `Long` or `None` |
+| `shot.persons` | `Counter` of face detections per person (face cluster id) |
+| `shot.main_person` | the person detected most often in the shot, or `None` |
+| `video.label(person)` | short letter for a person (`A` = most screen time) |
+
+`Hit`, `Shot`, `Video` and `SHOT_SCALES` are available without importing them. `label` and
+`group` are optional on a `Hit`: hits are labelled with their person sequence (`A-B-A`) and
+coloured by person pair.
+
+> Pattern code is executed with `exec`. This is fine for a local research tool. Don't expose the
+> app to untrusted users.
+
+### Included patterns
+
+- **Shot-reverse-shot** (`patterns/shot_reverse_shot.py`): at least 3 consecutive shots that
+  alternate between two persons (A-B-A, A-B-A-B, …). There is no maximum length.
+
+## Code layout
+
+```
+app.py                  navigation between the two views
+views/pattern_search.py View 1
+views/statistics.py     View 2
+explorer/data.py        export loader (shots, shot scales, thumbnails, faces, clusters)
+explorer/patterns.py    Hit type, loading/saving/running patterns
+explorer/timeline.py    HTML/JS timeline component
+patterns/*.py           pattern definitions
+```
