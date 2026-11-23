@@ -39,8 +39,9 @@ uv run streamlit run app.py
 
 ### Pattern Search
 
-Pick a video and a pattern in the sidebar. The pattern is plain Python code, which you can edit
-and run in the browser. The results appear on an interactive shot timeline:
+Pick a pattern in the sidebar. The pattern is plain Python code, which you can edit and run in
+the browser. It runs on all videos of the corpus at once, and each video gets its own interactive
+shot timeline:
 
 - one thumbnail per shot, above the shot boundaries
 - shots coloured by camera size and labelled with the main person (`CU · A`)

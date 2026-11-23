@@ -94,7 +94,8 @@ def render_timeline(video: Video, hits: list[Hit], theme: str = "light") -> tupl
         "scales": [{"name": s, "abbr": SCALE_ABBR[s], "color": SCALE_COLORS[s]} for s in SHOT_SCALES],
     }
     n_lanes = max(lanes, default=-1) + 1
-    height = 24 + 18 + 64 + 26 + max(n_lanes, 1) * 26 + 40 + 290
+    height = 24 + 18 + 64 + 26 + max(n_lanes, 1) * 26 + 24
+    data["height"] = height
     page = _TEMPLATE.replace("__DATA__", json.dumps(data)).replace(
         "__THEME__", html.escape("dark" if theme == "dark" else "light")
     )
@@ -242,7 +243,30 @@ function place(anchor) {
   tip.style.left = left + "px";
   const top = r.bottom - wr.top + 8;
   tip.style.top = top + "px";
+  tip.style.maxHeight = "none";
+  // grow the surrounding iframe while the preview is open (capped), then let it scroll
+  const want = Math.min(top + tip.offsetHeight + 12, D.height + 620);
+  resizeFrame(Math.max(D.height, want));
   tip.style.maxHeight = Math.max(120, window.innerHeight - top - 8) + "px";
+}
+
+function resizeFrame(h) {
+  try {
+    const f = window.frameElement;
+    if (!f) return;
+    const open = h > D.height;
+    // while the preview is open the frame floats above the following page content
+    f.style.height = h + "px";
+    f.style.position = "relative";
+    f.style.zIndex = open ? "1000" : "";
+    // lift Streamlit's element container above the following siblings
+    const box = f.closest("[data-testid=stElementContainer]") || f.parentElement;
+    if (box) {
+      box.style.overflow = open ? "visible" : "";
+      box.style.position = "relative";
+      box.style.zIndex = open ? "1000" : "";
+    }
+  } catch (e) { /* cross-origin: keep the fixed height */ }
 }
 
 function figure(s) {
@@ -263,15 +287,19 @@ function showShot(s, e) {
   place(e.currentTarget);
 }
 
-function hide() { tip.style.display = "none"; }
+function hide() { tip.style.display = "none"; resizeFrame(D.height); }
 
 document.getElementById("zin").onclick = () => { zoom = Math.min(zoom * 1.6, 200); render(); };
 document.getElementById("zout").onclick = () => { zoom = Math.max(zoom / 1.6, 1); render(); };
 document.getElementById("zfit").onclick = () => { zoom = 1; render(); };
 tip.onclick = e => e.stopPropagation();
+// leaving the iframe does not always fire mouseleave on the hovered element
+document.addEventListener("mouseout", e => { if (!e.relatedTarget && pinned === null) hide(); });
 document.body.onclick = () => { if (pinned !== null) { pinned = null; hide(); render(); } };
 scroll.addEventListener("scroll", () => { if (pinned === null) hide(); });
-window.addEventListener("resize", render);
+let lastWidth = window.innerWidth;
+// height changes come from our own preview resizing; only re-render on width changes
+window.addEventListener("resize", () => { if (window.innerWidth !== lastWidth) { lastWidth = window.innerWidth; render(); } });
 
 // start zoomed so that the median shot is at least ~70px wide
 const durs = D.shots.map(s => s.end - s.start).sort((a, b) => a - b);

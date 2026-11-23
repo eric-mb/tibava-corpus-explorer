@@ -31,3 +31,12 @@ Each step produces one commit.
 >
 > For now let's start with the first pattern which is shot-reverse-shot.
 > It is defined as a sequence of shots where two persons appear in alternating order like A-B-A-B-A. it has to be at least of length 3 (no max length)
+
+## Step 4: Push to GitHub
+
+> push the code
+
+## Step 5: All videos at once, timeline only
+
+> Please list all videos at once in the pattern search instead of having them in a dropdown list.
+> Also, please drop the table and the person in hits. The timeline with the thumbnails is enough.
