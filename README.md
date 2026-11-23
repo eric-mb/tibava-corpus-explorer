@@ -47,7 +47,7 @@ shot timeline:
 - shots coloured by camera size and labelled with the main person (`CU · A`)
 - hits shown as coloured bars below the shots, one colour per group (for example `A↔B` vs. `C↔B`)
 - hovering over a hit shows one thumbnail per shot of the sequence; clicking pins the preview
-- `−` / `Fit` / `+` to zoom
+- each timeline starts fitted to the page width; `−` / `Fit` / `+` to zoom
 
 **Save** writes the code to `patterns/<name>.py`. Saved patterns are also used by the
 statistics view.

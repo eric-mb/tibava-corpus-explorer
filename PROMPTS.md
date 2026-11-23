@@ -40,3 +40,7 @@ Each step produces one commit.
 
 > Please list all videos at once in the pattern search instead of having them in a dropdown list.
 > Also, please drop the table and the person in hits. The timeline with the thumbnails is enough.
+
+## Step 6: Fit as default zoom
+
+> Please let fit be the standarf for each timeline

@@ -201,7 +201,8 @@ function render() {
   // time axis
   const steps = [1, 2, 5, 10, 15, 30, 60, 120, 300, 600];
   const step = steps.find(s => s * pps >= 70) || 900;
-  for (let t = 0; t <= D.duration; t += step) el("tick", X(t), 0, 1).textContent = fmt(t).replace(/\.0$/, "");
+  // skip labels that would stick out of the track on the right
+  for (let t = 0; t <= D.duration && X(t) + 34 <= W + pad; t += step) el("tick", X(t), 0, 1).textContent = fmt(t).replace(/\.0$/, "");
 
   D.shots.forEach(s => {
     const x = X(s.start), w = (s.end - s.start) * pps - 2;
@@ -301,11 +302,7 @@ let lastWidth = window.innerWidth;
 // height changes come from our own preview resizing; only re-render on width changes
 window.addEventListener("resize", () => { if (window.innerWidth !== lastWidth) { lastWidth = window.innerWidth; render(); } });
 
-// start zoomed so that the median shot is at least ~70px wide
-const durs = D.shots.map(s => s.end - s.start).sort((a, b) => a - b);
-const med = durs.length ? durs[Math.floor(durs.length / 2)] : 1;
-const fitPps = (scroll.clientWidth - 16) / Math.max(D.duration, 1);
-zoom = Math.max(1, 70 / (med * fitPps));
+// start in "Fit" mode: the whole video fits the available width
 render();
 </script></body></html>
 """
