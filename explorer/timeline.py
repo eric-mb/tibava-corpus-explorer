@@ -65,8 +65,20 @@ def _lanes(hits: list[Hit]) -> list[int]:
     return lanes
 
 
-def render_timeline(video: Video, hits: list[Hit], theme: str = "light") -> tuple[str, int]:
-    """Return (html, height) for ``st.components.v1.html``."""
+CHART_HEIGHT = 110
+
+
+def render_timeline(
+    video: Video,
+    hits: list[Hit],
+    theme: str = "light",
+    series: dict | None = None,
+) -> tuple[str, int]:
+    """Return (html, height) for ``st.iframe``.
+
+    ``series`` optionally adds a step chart below the shots, aligned on the same time axis:
+    ``{"label": "Faces", "step": 0.5, "values": [...]}`` (one value per ``step`` seconds).
+    """
     thumbs = video.images([s.thumbnail_id for s in video.shots])
     colors = group_colors([h.group for h in hits])
     order = sorted(range(len(hits)), key=lambda i: min(hits[i].shots))
@@ -92,9 +104,13 @@ def render_timeline(video: Video, hits: list[Hit], theme: str = "light") -> tupl
         ],
         "groups": [{"name": g, "color": c} for g, c in colors.items()],
         "scales": [{"name": s, "abbr": SCALE_ABBR[s], "color": SCALE_COLORS[s]} for s in SHOT_SCALES],
+        "series": series,
+        "chartHeight": CHART_HEIGHT if series else 0,
+        "seriesColor": SERIES[0],
     }
     n_lanes = max(lanes, default=-1) + 1
-    height = 24 + 18 + 64 + 26 + max(n_lanes, 1) * 26 + 24
+    lanes_h = n_lanes * 26 if series else max(n_lanes, 1) * 26
+    height = 24 + 18 + 64 + 26 + data["chartHeight"] + lanes_h + 24
     data["height"] = height
     page = _TEMPLATE.replace("__DATA__", json.dumps(data)).replace(
         "__THEME__", html.escape("dark" if theme == "dark" else "light")
@@ -152,6 +168,11 @@ _TEMPLATE = r"""<!doctype html>
          justify-content:space-between; }
   .seq b { color:var(--ink); }
   .empty { color:var(--muted); padding:4px 8px; }
+  svg.series { position:absolute; left:0; overflow:visible; pointer-events:none; }
+  svg.series text { fill:var(--muted); font-size:10px; }
+  .readout { position:absolute; pointer-events:none; background:var(--panel); color:var(--ink);
+             border:1px solid var(--ring); border-radius:6px; padding:2px 6px; font-size:11px;
+             white-space:nowrap; box-shadow:0 2px 8px rgba(0,0,0,.12); display:none; }
 </style></head>
 <body><div id="wrap">
   <div class="bar">
@@ -193,9 +214,11 @@ function render() {
   const pps = Math.max(avail / Math.max(D.duration, 1), 0.5) * zoom;
   const W = D.duration * pps;
   track.innerHTML = "";
-  const lanes = Math.max(1, ...D.hits.map(h => h.lane + 1));
+  const lanes = D.series ? Math.max(0, ...D.hits.map(h => h.lane + 1))
+                         : Math.max(1, ...D.hits.map(h => h.lane + 1));
+  const CH = D.chartHeight, chartTop = 18 + 64 + 26, laneTop = chartTop + CH;
   track.style.width = (W + 2 * pad) + "px";
-  track.style.height = (18 + 64 + 26 + lanes * 26) + "px";
+  track.style.height = (laneTop + lanes * 26) + "px";
   const X = t => pad + t * pps;
 
   // time axis
@@ -221,7 +244,7 @@ function render() {
     const x = X(a.start), w = (b.end - a.start) * pps - 2;
     const c = col(h.color);
     const d = el("hit" + (c === "#eda100" ? " yellow" : "") + (pinned === k ? " active" : ""),
-      x, 18 + 64 + 26 + h.lane * 26, w, `background:${c}`);
+      x, laneTop + h.lane * 26, w, `background:${c}`);
     d.textContent = h.label;
     d.onmouseenter = e => { if (pinned === null) showHit(h, d); };
     d.onmouseleave = () => { if (pinned === null) hide(); };
@@ -233,6 +256,64 @@ function render() {
     };
     hitEls[k] = d;
   });
+
+  if (D.series) drawSeries(X, W, pad, chartTop, CH);
+}
+
+// step chart of a per-sample series (e.g. number of faces), aligned with the shots
+function drawSeries(X, W, pad, top, CH) {
+  const S = D.series, v = S.values, step = S.step;
+  const ymax = Math.max(3, ...v), inner = CH - 30;
+  const Y = n => top + 14 + inner - (n / ymax) * inner;
+  const ns = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(ns, "svg");
+  svg.setAttribute("class", "series");
+  svg.setAttribute("width", W + 2 * pad);
+  svg.setAttribute("height", top + CH);
+  svg.style.top = "0px";
+  const c = col(D.seriesColor);
+  let parts = [];
+  // grid + y labels (integers, at most ~4 labels)
+  const every = Math.max(1, Math.ceil(ymax / 4));
+  for (let n = 0; n <= ymax; n += every) {
+    parts.push(`<line x1="${pad}" x2="${pad + W}" y1="${Y(n)}" y2="${Y(n)}" stroke="var(--grid)" stroke-width="1"/>`);
+    parts.push(`<text x="${pad + 2}" y="${Y(n) - 2}">${n}</text>`);
+  }
+  // shot boundaries
+  D.shots.slice(1).forEach(s => parts.push(
+    `<line x1="${X(s.start)}" x2="${X(s.start)}" y1="${top + 2}" y2="${Y(0)}" stroke="var(--axis)" stroke-width="1" opacity=".7"/>`));
+  // step path
+  let d = `M${X(0)},${Y(v[0] || 0)}`;
+  for (let k = 1; k < v.length; k++) d += `H${X(k * step)}V${Y(v[k])}`;
+  d += `H${X(Math.min(v.length * step, D.duration))}`;
+  parts.push(`<path d="${d}V${Y(0)}H${X(0)}Z" fill="${c}" opacity=".18"/>`);
+  parts.push(`<path d="${d}" fill="none" stroke="${c}" stroke-width="2"/>`);
+  parts.push(`<text x="${pad + W - 2}" y="${top + CH - 4}" text-anchor="end">${esc(S.label)} per ${step} s</text>`);
+  parts.push(`<line id="cross" x1="0" x2="0" y1="${top + 2}" y2="${Y(0)}" stroke="var(--ink2)" stroke-width="1" visibility="hidden"/>`);
+  parts.push(`<circle id="crossdot" r="4" fill="${c}" visibility="hidden"/>`);
+  svg.innerHTML = parts.join("");
+  track.appendChild(svg);
+
+  // hover: crosshair + readout (hit target = the whole chart band)
+  const hit = el("", pad, top, W, `position:absolute;height:${CH}px;cursor:crosshair`);
+  const ro = el("readout", 0, top, 10, "width:auto");
+  const cross = svg.querySelector("#cross"), dot = svg.querySelector("#crossdot");
+  hit.onmousemove = e => {
+    const r = track.getBoundingClientRect();
+    const t = Math.max(0, (e.clientX - r.left - pad) / (W / D.duration));
+    const k = Math.min(v.length - 1, Math.floor(t / step));
+    const x = X(k * step);
+    cross.setAttribute("x1", x); cross.setAttribute("x2", x); cross.setAttribute("visibility", "visible");
+    dot.setAttribute("cx", x); dot.setAttribute("cy", Y(v[k])); dot.setAttribute("visibility", "visible");
+    ro.textContent = `${fmt(k * step)} · ${v[k]} ${S.label.toLowerCase()}`;
+    ro.style.display = "block";
+    const left = x + 8 + ro.offsetWidth > pad + W ? x - 8 - ro.offsetWidth : x + 8;
+    ro.style.left = left + "px"; ro.style.top = (top + 2) + "px";
+  };
+  hit.onmouseleave = () => {
+    cross.setAttribute("visibility", "hidden"); dot.setAttribute("visibility", "hidden");
+    ro.style.display = "none";
+  };
 }
 
 function place(anchor) {

@@ -48,3 +48,7 @@ Each step produces one commit.
 ## Step 7: Faces on screen
 
 > Please create a new view where for each video a graph is created that shows the number of faces visible on screen.
+
+## Step 8: Thumbnails for the faces view
+
+> okay, please also add the thumbnails as in the pattern search view

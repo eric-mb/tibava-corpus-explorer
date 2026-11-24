@@ -60,8 +60,9 @@ statistics view.
 
 ### Faces on Screen
 
-One chart per video showing how many faces are detected at each moment (sampled every 0.5 s),
-with shot boundaries as faint vertical lines. The caption gives the share of time with at least
+One timeline per video, with the same shot thumbnails and shot row as the pattern search, and
+below it a chart of how many faces are detected at each moment (sampled every 0.5 s). Shot
+boundaries appear as faint vertical lines, and hovering over the chart shows the exact value. The caption gives the share of time with at least
 one face, and the mean and maximum number of faces.
 
 ## Writing patterns
