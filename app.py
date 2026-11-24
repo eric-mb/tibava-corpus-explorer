@@ -6,6 +6,7 @@ pages = st.navigation(
     [
         st.Page("views/pattern_search.py", title="Pattern Search", icon="🔎", default=True),
         st.Page("views/statistics.py", title="Corpus Statistics", icon="📊"),
+        st.Page("views/faces.py", title="Faces on Screen", icon="👥"),
     ]
 )
 pages.run()

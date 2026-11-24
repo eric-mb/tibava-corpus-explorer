@@ -58,6 +58,12 @@ statistics view.
 - for each saved pattern: hits per video, share of shots inside hits, hit length, and camera
   sizes inside hits compared with all shots
 
+### Faces on Screen
+
+One chart per video showing how many faces are detected at each moment (sampled every 0.5 s),
+with shot boundaries as faint vertical lines. The caption gives the share of time with at least
+one face, and the mean and maximum number of faces.
+
 ## Writing patterns
 
 A pattern defines `find(video)` and returns a list of `Hit` objects:
@@ -95,9 +101,10 @@ coloured by person pair.
 ## Code layout
 
 ```
-app.py                  navigation between the two views
+app.py                  navigation between the views
 views/pattern_search.py View 1
 views/statistics.py     View 2
+views/faces.py          View 3
 explorer/data.py        export loader (shots, shot scales, thumbnails, faces, clusters)
 explorer/patterns.py    Hit type, loading/saving/running patterns
 explorer/timeline.py    HTML/JS timeline component

@@ -44,3 +44,7 @@ Each step produces one commit.
 ## Step 6: Fit as default zoom
 
 > Please let fit be the standarf for each timeline
+
+## Step 7: Faces on screen
+
+> Please create a new view where for each video a graph is created that shows the number of faces visible on screen.
