@@ -52,3 +52,7 @@ Each step produces one commit.
 ## Step 8: Thumbnails for the faces view
 
 > okay, please also add the thumbnails as in the pattern search view
+
+## Step 9: Push to GitHub
+
+> push the code
